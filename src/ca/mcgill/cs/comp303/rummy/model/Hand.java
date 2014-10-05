@@ -1,9 +1,6 @@
 package ca.mcgill.cs.comp303.rummy.model;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Models a hand of 10 cards. The hand is not sorted. Not threadsafe. The hand is a set: adding the same card twice will
@@ -77,7 +74,7 @@ public class Hand
     public boolean isComplete()
     {
 
-        return aCards.size() == HAND_MAX_SIZE; // TODO
+        return aCards.size() == HAND_MAX_SIZE;
     }
 
     /**
@@ -206,16 +203,110 @@ public class Hand
      */
     public void autoMatch()
     {
-        Map<Card.Rank, Set<Card>> potentialGroup = new HashMap<Card.Rank, Set<Card>>();
-        for (Card card : aUnmatchedCards)
+        List<Card> sortedCards = new ArrayList<Card>(aCards);
+        Collections.sort(sortedCards, Collections.reverseOrder());
+        List<Card> lastSet = new ArrayList<Card>();
+        SetType currentSetType = null;
+        boolean needRerun = true;
+
+        Set<Card> usedCards = new HashSet<Card>();
+        while (needRerun)
         {
-            Set<Card> ordinalCards = potentialGroup.get(card.getRank());
-            if (ordinalCards == null)
+            Iterator<Card> iterator = sortedCards.iterator();
+            needRerun = false;
+            while (iterator.hasNext())
             {
-                ordinalCards = new HashSet<Card>();
-                potentialGroup.put(card.getRank(), ordinalCards);
+                Card card = iterator.next();
+                if (usedCards.contains(card))
+                {
+                    continue;
+                }
+                // If the current serie has only 1 element we check what type of set we can make
+                if (lastSet.size() == 1)
+                {
+                    Card lastCard = lastSet.get(lastSet.size() - 1);
+                    if (lastCard.getRank() == card.getRank())
+                    {
+                        currentSetType = SetType.GROUP;
+                    }
+                    else if (lastCard.getSuit() == card.getSuit() && (lastCard.getRank().ordinal() - 1) == card
+                            .getRank()
+                            .ordinal())
+                    {
+                        currentSetType = SetType.RUN;
+                    }
+                    else
+                    {
+                        lastSet.clear();
+                    }
+                }
+
+                if (lastSet.isEmpty())
+                {
+                    lastSet.add(card);
+                }
+                else
+                {
+                    boolean setEnded = false;
+                    Card lastCard = lastSet.get(lastSet.size() - 1);
+                    if (currentSetType == SetType.GROUP)
+                    {
+                        if (card.getRank() == lastCard.getRank())
+                        {
+                            lastSet.add(card);
+                            usedCards.add(card);
+                        }
+                        else
+                        {
+                            setEnded = true;
+                        }
+                    }
+                    else if (currentSetType == SetType.RUN)
+                    {
+                        //Potentially a group
+                        if (card.getRank() == lastCard.getRank())
+                        {
+                            //Skip this value
+                            needRerun = true;
+                            continue;
+                        }
+                        else if (lastCard.getRank().ordinal() - 1 == card.getRank().ordinal()
+                                && lastCard.getSuit() == card
+                                .getSuit())
+                        {
+                            lastSet.add(card);
+                            usedCards.add(card);
+                        }
+                        else
+                        {
+                            setEnded = true;
+                        }
+                    }
+                    else
+                    {
+                        System.out.println("error should never be in here");
+                    }
+
+                    if (setEnded)
+                    {
+                        if (lastSet.size() >= 3)
+                        {
+                            System.out.println("Good set: " + lastSet);
+                        }
+                        else
+                        {
+                            System.out.println("Bad set: " + lastSet);
+                        }
+                        lastSet.clear();
+                    }
+                }
             }
-            ordinalCards.add(card);
+
         }
+    }
+
+    private enum SetType
+    {
+        RUN, GROUP
     }
 }
