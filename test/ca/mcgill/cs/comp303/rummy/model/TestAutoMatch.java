@@ -20,13 +20,17 @@ public class TestAutoMatch
         lHand.add(AllCards.CAS);
         lHand.add(AllCards.C2S);
         lHand.add(AllCards.C3S);
-        lHand.add(AllCards.C4S);
-        lHand.add(AllCards.C4D);
-        lHand.add(AllCards.C4C);
+
         lHand.add(AllCards.C2H);
         lHand.add(AllCards.C3H);
         lHand.add(AllCards.C4H);
+
+        lHand.add(AllCards.C4C);
+        lHand.add(AllCards.C4D);
+        lHand.add(AllCards.C4S);
+
         lHand.add(AllCards.C2D);
+        
         lHand.autoMatch();
         Set<Card> lUnmatched = lHand.getUnmatchedCards();
         assertEquals(1, lUnmatched.size());

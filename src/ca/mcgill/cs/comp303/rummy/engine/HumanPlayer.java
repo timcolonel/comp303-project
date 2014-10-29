@@ -6,4 +6,8 @@ package ca.mcgill.cs.comp303.rummy.engine;
  */
 public class HumanPlayer extends Player
 {
+    @Override public void play()
+    {
+        //M3
+    }
 }

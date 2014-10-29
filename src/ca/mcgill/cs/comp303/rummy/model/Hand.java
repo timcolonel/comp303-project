@@ -1,11 +1,17 @@
 package ca.mcgill.cs.comp303.rummy.model;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Models a hand of 10 cards. The hand is not sorted. Not threadsafe. The hand is a set: adding the same card twice will
  * not add duplicates of the card.
- * <p/>
+ * <p>
  * size() > 0 size() <= HAND_SIZE
  */
 public class Hand
@@ -39,16 +45,19 @@ public class Hand
             return;
         }
 
-        if (isComplete())
+        if (needToDiscard())
         {
             throw new HandException("The hand is complete");
         }
-
-        else if (!aCards.add(pCard))
+        else if (aCards.add(pCard))
         {
             aUnmatchedCards.add(pCard);
+        }
+        else
+        {
             throw new HandException("The card is already in the hand");
         }
+        System.out.println();
     }
 
     /**
@@ -193,7 +202,7 @@ public class Hand
 
         if (!aSet.isRun())
         {
-            throw new HandException("Not a valid group");
+            throw new HandException("Not a valid run");
         }
         else
         {
@@ -210,116 +219,125 @@ public class Hand
      */
     public void autoMatch()
     {
-        List<Card> sortedCards = new ArrayList<Card>(aCards);
-        Collections.sort(sortedCards, Collections.reverseOrder());
-        List<Card> lastSet = new ArrayList<Card>();
-        SetType currentSetType = null;
-        boolean needRerun = true;
+        List<Card> sortedCards = new ArrayList<Card>(aUnmatchedCards);
+        Collections.sort(sortedCards);
+        List<List<Card>> groups = getPotentialGroups();
+        List<List<Card>> runs = getPotentialRuns();
+        int bestScore = Integer.MAX_VALUE;
+        Hand bestHand = this;
 
-        Set<Card> usedCards = new HashSet<Card>();
-        while (needRerun)
+        for (List<Card> cards : runs)
         {
-            Iterator<Card> iterator = sortedCards.iterator();
-            needRerun = false;
-            while (iterator.hasNext())
+            Hand clone = this.clone();
+            clone.createRun(new HashSet<Card>(cards));
+            clone.autoMatch();
+            int score = clone.score();
+            if (score < bestScore)
             {
-                Card card = iterator.next();
-                if (usedCards.contains(card))
-                {
-                    continue;
-                }
-                // If the current serie has only 1 element we check what type of set we can make
-                if (lastSet.size() == 1)
-                {
-                    Card lastCard = lastSet.get(lastSet.size() - 1);
-                    if (lastCard.getRank() == card.getRank())
-                    {
-                        currentSetType = SetType.GROUP;
-                    }
-                    else if (lastCard.getSuit() == card.getSuit() && (lastCard.getRank().ordinal() - 1) == card
-                            .getRank()
-                            .ordinal())
-                    {
-                        currentSetType = SetType.RUN;
-                    }
-                    else
-                    {
-                        lastSet.clear();
-                    }
-                }
+                bestScore = score;
+                bestHand = clone;
+            }
+        }
+        for (List<Card> cards : groups)
+        {
+            Hand clone = this.clone();
+            clone.createGroup(new HashSet<Card>(cards));
+            clone.autoMatch();
+            int score = clone.score();
+            if (score < bestScore)
+            {
+                bestScore = score;
+                bestHand = clone;
+            }
+        }
 
-                if (lastSet.isEmpty())
-                {
-                    lastSet.add(card);
-                }
-                else
-                {
-                    boolean setEnded = false;
-                    Card lastCard = lastSet.get(lastSet.size() - 1);
-                    if (currentSetType == SetType.GROUP)
-                    {
-                        if (card.getRank() == lastCard.getRank())
-                        {
-                            lastSet.add(card);
-                            usedCards.add(card);
-                        }
-                        else
-                        {
-                            setEnded = true;
-                        }
-                    }
-                    else if (currentSetType == SetType.RUN)
-                    {
-                        //Potentially a group
-                        if (card.getRank() == lastCard.getRank())
-                        {
-                            //Skip this value
-                            needRerun = true;
-                            continue;
-                        }
-                        else if (lastCard.getRank().ordinal() - 1 == card.getRank().ordinal()
-                                && lastCard.getSuit() == card
-                                .getSuit())
-                        {
-                            lastSet.add(card);
-                            usedCards.add(card);
-                        }
-                        else
-                        {
-                            setEnded = true;
-                        }
-                    }
-                    else
-                    {
-                        System.out.println("error should never be in here");
-                    }
 
-                    if (setEnded)
+        this.aUnmatchedCards = bestHand.aUnmatchedCards;
+        this.aMatchedSets = bestHand.aMatchedSets;
+    }
+
+    public Hand clone()
+    {
+        Hand clone = new Hand();
+        clone.aCards = new HashSet<Card>(aCards);
+        clone.aUnmatchedCards = getUnmatchedCards();
+        clone.aMatchedSets = getMatchedSets();
+
+        return clone;
+    }
+
+    /**
+     * @return hash map of potential groups
+     */
+    private List<List<Card>> getPotentialGroups()
+    {
+        if (getUnmatchedCards().size() < 3)
+        {
+            return new ArrayList<List<Card>>();
+        }
+        Map<Card.Rank, List<Card>> groups = new HashMap<Card.Rank, List<Card>>();
+        for (Card card : getUnmatchedCards())
+        {
+            if (!groups.containsKey(card.getRank()))
+            {
+                groups.put(card.getRank(), new ArrayList<Card>());
+            }
+            groups.get(card.getRank()).add(card);
+        }
+        List<List<Card>> potentialGroups = new ArrayList<List<Card>>();
+        for (Card.Rank rank : groups.keySet())
+        {
+            if (groups.get(rank).size() >= 3)
+            {
+                potentialGroups.add(groups.get(rank));
+            }
+        }
+        return potentialGroups;
+    }
+
+    /**
+     * @return list of potential suits
+     */
+    private List<List<Card>> getPotentialRuns()
+    {
+        if (getUnmatchedCards().size() < 3)
+        {
+            return new ArrayList<List<Card>>();
+        }
+        List<List<Card>> potentialSeries = new ArrayList<List<Card>>();
+        Map<Card.Suit, List<Card>> suits = new HashMap<Card.Suit, List<Card>>();
+        for (Card card : getUnmatchedCards())
+        {
+            if (!suits.containsKey(card.getSuit()))
+            {
+                suits.put(card.getSuit(), new ArrayList<Card>());
+            }
+            suits.get(card.getSuit()).add(card);
+        }
+
+        for (Card.Suit suit : suits.keySet())
+        {
+            if (suits.get(suit).size() >= 3)
+            {
+                List<Card> cards = suits.get(suit);
+                Collections.sort(cards);
+                for (int i = 0; i < cards.size() - 2; i++)
+                {
+                    for (int j = i + 2; j < cards.size(); j++)
                     {
-                        if (lastSet.size() >= 3)
+                        ICardSet aSet = new CardSet(cards.subList(i, j+1));
+                        if (aSet.isRun())
                         {
-                            System.out.println("Good set: " + lastSet);
+                            potentialSeries.add(cards.subList(i, j+1));
                         }
                         else
                         {
-                            System.out.println("Bad set: " + lastSet);
+                            break;
                         }
-                        lastSet.clear();
                     }
                 }
             }
         }
-
-    }
-
-    public ArrayList<Card> getCards()
-    {
-        return new ArrayList<Card>(aCards);
-
-    }
-
-    private enum SetType
-    {
-        RUN, GROUP
+        return potentialSeries;
     }
 }

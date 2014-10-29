@@ -30,6 +30,18 @@ public class CardSet implements ICardSet
         }
     }
 
+    /**
+     * Constructor with list.
+     *
+     * @param pSet Set to initialize the CardSet with
+     */
+    public CardSet(List<Card> pSet)
+    {
+        if (pSet != null && !pSet.contains(null))
+        {
+            this.aSet = new HashSet<Card>(Collections.unmodifiableList(pSet));
+        }
+    }
     @Override
     public Iterator<Card> iterator()
     {

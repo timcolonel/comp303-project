@@ -1,6 +1,7 @@
 package ca.mcgill.cs.comp303.rummy.engine;
 
 import ca.mcgill.cs.comp303.rummy.model.Card;
+import ca.mcgill.cs.comp303.rummy.model.Hand;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,7 @@ public class RandomComputerPlayer extends ComputerPlayer
     @Override
     protected boolean shouldKnock()
     {
+        Hand workingHand = getHand().clone();
         return false;
     }
 
