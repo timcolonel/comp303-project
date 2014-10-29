@@ -18,9 +18,9 @@ public class Hand
 {
     private static final int HAND_MAX_SIZE = 11;
     private static final int MAX_CARD_VALUE = 10;
-    private Set<Card> aCards = new HashSet<Card>();
-    private Set<Card> aUnmatchedCards = new HashSet<Card>();
-    private Set<ICardSet> aMatchedSets = new HashSet<ICardSet>();
+    private Set<Card> aCards = new HashSet<>();
+    private Set<Card> aUnmatchedCards = new HashSet<>();
+    private Set<ICardSet> aMatchedSets = new HashSet<>();
 
     /**
      * Creates a new, empty hand.
@@ -34,9 +34,6 @@ public class Hand
      * Adds pCard to the list of unmatched cards. If the card is already in the hand, it is not added.
      *
      * @param pCard The card to add.
-     * @throws HandException if the hand is complete
-     *                       if the card is already in the hand.
-     * @pre pCard != null
      */
     public void add(Card pCard)
     {
@@ -65,7 +62,6 @@ public class Hand
      * the hand.
      *
      * @param pCard The card to remove.
-     * @pre pCard != null
      */
     public void remove(Card pCard)
     {
@@ -130,7 +126,6 @@ public class Hand
      *
      * @param pCard The card to check.
      * @return true if the card is already in the hand.
-     * @pre pCard != null
      */
     public boolean contains(Card pCard)
     {
@@ -154,8 +149,6 @@ public class Hand
      * Creates a group of cards of the same rank.
      *
      * @param pCards The cards to groups
-     * @throws HandException If the cards in pCard are not all unmatched cards of the hand or if the group is not a valid group.
-     * @pre pCards != null
      */
     public void createGroup(Set<Card> pCards)
     {
@@ -186,8 +179,6 @@ public class Hand
      * Creates a run of cards of the same suit.
      *
      * @param pCards The cards to group in a run
-     * @throws HandException If the cards in pCard are not all unmatched cards of the hand or if the group is not a valid group.
-     * @pre pCards != null
      */
     public void createRun(Set<Card> pCards)
     {
@@ -219,7 +210,7 @@ public class Hand
      */
     public void autoMatch()
     {
-        List<Card> sortedCards = new ArrayList<Card>(aUnmatchedCards);
+        List<Card> sortedCards = new ArrayList<>(aUnmatchedCards);
         Collections.sort(sortedCards);
         List<List<Card>> groups = getPotentialGroups();
         List<List<Card>> runs = getPotentialRuns();
@@ -229,28 +220,33 @@ public class Hand
         for (List<Card> cards : runs)
         {
             Hand clone = this.clone();
-            clone.createRun(new HashSet<Card>(cards));
+            clone.createRun(new HashSet<>(cards));
             clone.autoMatch();
             int score = clone.score();
             if (score < bestScore)
             {
-                bestScore = score;
-                bestHand = clone;
+                if (!(clone.needToDiscard() && clone.getUnmatchedCards().size() == 0))
+                {
+                    bestScore = score;
+                    bestHand = clone;
+                }
             }
         }
         for (List<Card> cards : groups)
         {
             Hand clone = this.clone();
-            clone.createGroup(new HashSet<Card>(cards));
+            clone.createGroup(new HashSet<>(cards));
             clone.autoMatch();
             int score = clone.score();
             if (score < bestScore)
             {
-                bestScore = score;
-                bestHand = clone;
+                if (!(clone.needToDiscard() && clone.getUnmatchedCards().size() == 0))
+                {
+                    bestScore = score;
+                    bestHand = clone;
+                }
             }
         }
-
 
         this.aUnmatchedCards = bestHand.aUnmatchedCards;
         this.aMatchedSets = bestHand.aMatchedSets;
@@ -259,7 +255,7 @@ public class Hand
     public Hand clone()
     {
         Hand clone = new Hand();
-        clone.aCards = new HashSet<Card>(aCards);
+        clone.aCards = new HashSet<>(aCards);
         clone.aUnmatchedCards = getUnmatchedCards();
         clone.aMatchedSets = getMatchedSets();
 
@@ -273,23 +269,34 @@ public class Hand
     {
         if (getUnmatchedCards().size() < 3)
         {
-            return new ArrayList<List<Card>>();
+            return new ArrayList<>();
         }
-        Map<Card.Rank, List<Card>> groups = new HashMap<Card.Rank, List<Card>>();
+        Map<Card.Rank, List<Card>> groups = new HashMap<>();
         for (Card card : getUnmatchedCards())
         {
             if (!groups.containsKey(card.getRank()))
             {
-                groups.put(card.getRank(), new ArrayList<Card>());
+                groups.put(card.getRank(), new ArrayList<>());
             }
             groups.get(card.getRank()).add(card);
         }
-        List<List<Card>> potentialGroups = new ArrayList<List<Card>>();
+        List<List<Card>> potentialGroups = new ArrayList<>();
         for (Card.Rank rank : groups.keySet())
         {
             if (groups.get(rank).size() >= 3)
             {
                 potentialGroups.add(groups.get(rank));
+            }
+            if (groups.get(rank).size() == 4)
+            {
+                List<Card> cards = groups.get(rank);
+
+                for (Card card : cards)
+                {
+                    List<Card> clone = new ArrayList<>(cards);
+                    clone.remove(card);
+                    potentialGroups.add(clone);
+                }
             }
         }
         return potentialGroups;
@@ -302,15 +309,15 @@ public class Hand
     {
         if (getUnmatchedCards().size() < 3)
         {
-            return new ArrayList<List<Card>>();
+            return new ArrayList<>();
         }
-        List<List<Card>> potentialSeries = new ArrayList<List<Card>>();
-        Map<Card.Suit, List<Card>> suits = new HashMap<Card.Suit, List<Card>>();
+        List<List<Card>> potentialSeries = new ArrayList<>();
+        Map<Card.Suit, List<Card>> suits = new HashMap<>();
         for (Card card : getUnmatchedCards())
         {
             if (!suits.containsKey(card.getSuit()))
             {
-                suits.put(card.getSuit(), new ArrayList<Card>());
+                suits.put(card.getSuit(), new ArrayList<>());
             }
             suits.get(card.getSuit()).add(card);
         }
@@ -325,10 +332,10 @@ public class Hand
                 {
                     for (int j = i + 2; j < cards.size(); j++)
                     {
-                        ICardSet aSet = new CardSet(cards.subList(i, j+1));
+                        ICardSet aSet = new CardSet(cards.subList(i, j + 1));
                         if (aSet.isRun())
                         {
-                            potentialSeries.add(cards.subList(i, j+1));
+                            potentialSeries.add(cards.subList(i, j + 1));
                         }
                         else
                         {

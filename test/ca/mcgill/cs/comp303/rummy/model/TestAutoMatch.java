@@ -30,7 +30,7 @@ public class TestAutoMatch
         lHand.add(AllCards.C4S);
 
         lHand.add(AllCards.C2D);
-        
+
         lHand.autoMatch();
         Set<Card> lUnmatched = lHand.getUnmatchedCards();
         assertEquals(1, lUnmatched.size());
@@ -59,5 +59,58 @@ public class TestAutoMatch
         Set<ICardSet> lMatched = lHand.getMatchedSets();
         assertEquals(3, lMatched.size());
         assertEquals(10, lHand.score());
+    }
+
+    @Test
+    public void testShouldKeepACardToDiscard()
+    {
+        Hand lHand = new Hand();
+        lHand.add(AllCards.CAS);
+        lHand.add(AllCards.C2S);
+        lHand.add(AllCards.C3S);
+        lHand.add(AllCards.C4S);
+        lHand.add(AllCards.C5S);
+
+        lHand.add(AllCards.C2H);
+        lHand.add(AllCards.C3H);
+        lHand.add(AllCards.C4H);
+
+        lHand.add(AllCards.C6C);
+        lHand.add(AllCards.C6D);
+        lHand.add(AllCards.C6S);
+
+
+        lHand.autoMatch();
+        Set<Card> lUnmatched = lHand.getUnmatchedCards();
+        assertEquals(1, lUnmatched.size());
+        Set<ICardSet> lMatched = lHand.getMatchedSets();
+        assertEquals(3, lMatched.size());
+        assertEquals(1, lHand.score());
+    }
+    @Test
+    public void testShouldKeepACardToDiscard2()
+    {
+        Hand lHand = new Hand();
+        lHand.add(AllCards.CAS);
+        lHand.add(AllCards.C2S);
+        lHand.add(AllCards.C3S);
+
+        lHand.add(AllCards.C5C);
+        lHand.add(AllCards.C5D);
+        lHand.add(AllCards.C5S);
+        lHand.add(AllCards.C5H);
+
+        lHand.add(AllCards.C6C);
+        lHand.add(AllCards.C6D);
+        lHand.add(AllCards.C6S);
+        lHand.add(AllCards.C6H);
+
+
+        lHand.autoMatch();
+        Set<Card> lUnmatched = lHand.getUnmatchedCards();
+        assertEquals(1, lUnmatched.size());
+        Set<ICardSet> lMatched = lHand.getMatchedSets();
+        assertEquals(3, lMatched.size());
+        assertEquals(5, lHand.score());
     }
 }
