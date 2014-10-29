@@ -10,7 +10,7 @@ import java.util.*;
  */
 public class Hand
 {
-    private static final int HAND_MAX_SIZE = 10;
+    private static final int HAND_MAX_SIZE = 11;
     private static final int MAX_CARD_VALUE = 10;
     private Set<Card> aCards = new HashSet<Card>();
     private Set<Card> aUnmatchedCards = new HashSet<Card>();
@@ -73,7 +73,14 @@ public class Hand
      */
     public boolean isComplete()
     {
+        return aCards.size() == HAND_MAX_SIZE - 1;
+    }
 
+    /**
+     * @return true if the hand contains 1 extra card that need to be discarded
+     */
+    public boolean needToDiscard()
+    {
         return aCards.size() == HAND_MAX_SIZE;
     }
 
@@ -301,8 +308,14 @@ public class Hand
                     }
                 }
             }
-
         }
+
+    }
+
+    public ArrayList<Card> getCards()
+    {
+        return new ArrayList<Card>(aCards);
+
     }
 
     private enum SetType
