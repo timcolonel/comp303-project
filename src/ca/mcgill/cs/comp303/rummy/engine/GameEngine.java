@@ -20,7 +20,8 @@ public class GameEngine extends Observable
 
     private Deck aDeck;
     private Stack<Card> aDiscardPile;
-    private Queue<Player> aPlayers = new ArrayDeque<Player>();
+    private Queue<Player> aPlayers = new ArrayDeque<>();
+    private boolean aRunning = false;
 
     /**
      * Add a player to the list. The number of players cannot overflow the MAX_PLAYER constant
@@ -62,16 +63,85 @@ public class GameEngine extends Observable
      */
     public List<Player> getPlayers()
     {
-        return new ArrayList<Player>(aPlayers);
+        return new ArrayList<>(aPlayers);
     }
 
     /**
+     * Return the winner.
      *
+     * @return player winner
      */
-    public void newGame()
+    public Player newGame()
     {
         aDeck = new Deck();
-        aDiscardPile = new Stack<Card>();
+        aDiscardPile = new Stack<>();
+        aRunning = true;
+        while (aRunning)
+        {
+            if (aDeck.size() == 2)
+            {
+                return null; //No winner
+            }
+            Player player = nextPlayer();
+            player.giveCard(getCardByAction(player.draw()));
+            Card discardedCard;
+            try
+            {
+                discardedCard = player.play();
+            }
+            catch (KnockException e) //Current player knocked
+            {
+                discardedCard = e.getDiscardedCard();
+                aRunning = false;
+            }
+            discard(discardedCard);
+            player.discard(discardedCard);
+        }
+        Player bestPlayer = null;
+        int bestScore = Integer.MAX_VALUE;
+        boolean draw = false;
+        for (Player player : aPlayers)
+        {
+            int score = player.getScore();
+            if (score < bestScore)
+            {
+                bestPlayer = player;
+                bestScore = score;
+                draw = false;
+            }
+            else if (score == bestScore)
+            {
+                draw = true;
+            }
+        }
+        if (draw)
+        {
+            return null;
+        }
+        else
+        {
+            return bestPlayer;
+
+        }
+
+    }
+
+    /**
+     * Get the card corresponding to the action
+     *
+     * @param pAction Action(Deck or discarded pile)
+     * @return card draw
+     */
+    private Card getCardByAction(DrawAction pAction)
+    {
+        if (pAction == DrawAction.DECK)
+        {
+            return draw();
+        }
+        else
+        {
+            return recycle();
+        }
     }
 
     /**
@@ -79,7 +149,7 @@ public class GameEngine extends Observable
      *
      * @return card got in the deck
      */
-    public Card draw()
+    private Card draw()
     {
         return aDeck.draw();
     }
@@ -87,7 +157,7 @@ public class GameEngine extends Observable
     /**
      * @return the last discarded card(Don't remove just peek)
      */
-    public Card getLastDiscardedCard()
+    private Card getLastDiscardedCard()
     {
         return aDiscardPile.peek();
     }
@@ -97,7 +167,7 @@ public class GameEngine extends Observable
      *
      * @param pCard card to discard
      */
-    public void discard(Card pCard)
+    private void discard(Card pCard)
     {
         aDiscardPile.push(pCard);
     }
@@ -107,41 +177,22 @@ public class GameEngine extends Observable
      *
      * @return the top card in the discard pile
      */
-    public Card recycle()
+    private Card recycle()
     {
         return aDiscardPile.pop();
     }
 
     /**
-     *
+     * Terminate the game.
      */
-    public boolean isGameOver()
+    public void knock()
     {
-        return false;
+        aRunning = false;
     }
 
-    /**
-     *
-     */
-    public Card topOfStack()
+    public enum DrawAction
     {
-        return null;
-    }
-
-    /**
-     * @return Human player
-     */
-    public Player getHuman()
-    {
-        return null;
-    }
-
-    /**
-     * @return Computer player
-     */
-    public Player getComputer()
-    {
-        return null;
+        DECK, DISCARDED
     }
 
 }

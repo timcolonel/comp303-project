@@ -9,47 +9,11 @@ import ca.mcgill.cs.comp303.rummy.model.Hand;
  */
 public abstract class Player
 {
+
+    protected static final double KNOCK_MAX = 10;
+
     private Hand aHand;
     private GameEngine aEngine;
-
-    /**
-     * Draw a card from the deck.
-     *
-     * @return if a card was draw
-     */
-    public boolean draw()
-    {
-        if (!canDrawCard())
-        {
-            return false;
-        }
-        aHand.add(aEngine.draw());
-        return true;
-    }
-
-    /**
-     * Recycle the card on top of the discard bin.
-     *
-     * @return card
-     */
-    public boolean recycle()
-    {
-        if (!canDrawCard())
-        {
-            return false;
-        }
-        aHand.add(aEngine.recycle());
-        return true;
-    }
-
-    /**
-     * Discard the extra card.
-     */
-    public void discard(Card pCard)
-    {
-        aEngine.discard(pCard);
-        aHand.remove(pCard);
-    }
 
     /**
      *
@@ -60,7 +24,27 @@ public abstract class Player
     }
 
     /**
-     * @return Check if the player can draw a new card
+     * Give card to the player.
+     *
+     * @param pCard Card to give
+     */
+    public void giveCard(Card pCard)
+    {
+        aHand.add(pCard);
+    }
+
+    /**
+     * Remove the given card from the player.
+     *
+     * @param pCard card to discard
+     */
+    public void discard(Card pCard)
+    {
+        aHand.remove(pCard);
+    }
+
+    /**
+     * @return Check if the player can drawFromDeck a new card
      */
     public boolean canDrawCard()
     {
@@ -70,7 +54,13 @@ public abstract class Player
     /**
      *
      */
-    public abstract void play();
+    public abstract GameEngine.DrawAction draw();
+
+    /**
+     * @return the discarded card
+     * @throws KnockException Throw a Knock exception if the player decide to knock.
+     */
+    public abstract Card play() throws KnockException;
 
     /**
      * @return hand
@@ -104,4 +94,15 @@ public abstract class Player
         this.aEngine = pEngine;
     }
 
+    /**
+     * Return current player score with the hand he has.
+     *
+     * @return score
+     */
+    public int getScore()
+    {
+        Hand clone = getHand();
+        clone.autoMatch();
+        return clone.score();
+    }
 }

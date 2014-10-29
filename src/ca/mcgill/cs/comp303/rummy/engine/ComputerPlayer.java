@@ -8,28 +8,27 @@ import ca.mcgill.cs.comp303.rummy.model.Card;
  */
 public abstract class ComputerPlayer extends Player
 {
-
     @Override
-    public void play()
+    public GameEngine.DrawAction draw()
     {
         if (shouldRecycle())
         {
-            recycle();
+            return GameEngine.DrawAction.DISCARDED;
         }
         else
         {
-            draw();
+            return GameEngine.DrawAction.DECK;
         }
+    }
 
+    @Override
+    public Card play() throws KnockException
+    {
         if (shouldKnock())
         {
-            knock();
-            discard(getBestDiscard());
+            throw new KnockException(getBestDiscard());
         }
-        else
-        {
-            discard(getBestDiscard());
-        }
+        return getBestDiscard();
     }
 
     /**

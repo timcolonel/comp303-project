@@ -14,6 +14,7 @@ import java.util.Random;
 public class RandomComputerPlayer extends ComputerPlayer
 {
     private static final double HALF = 0.5;
+
     private Random aRand = new Random();
 
     @Override
@@ -26,6 +27,11 @@ public class RandomComputerPlayer extends ComputerPlayer
     protected boolean shouldKnock()
     {
         Hand workingHand = getHand().clone();
+        workingHand.autoMatch();
+        if (workingHand.score() < KNOCK_MAX)
+        {
+            return true;
+        }
         return false;
     }
 
