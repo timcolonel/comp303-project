@@ -1,4 +1,6 @@
 Comp 303 Project
 ===============
 
-Card game project
+## Millestones
+* Millestone 1: Working
+* Millestone 2: Should be working(no test)
